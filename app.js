@@ -1,58 +1,93 @@
-// app.js
 import express from "express";
 import mysql from "mysql2/promise";
-import cors from "cors";
 
 const pool = mysql.createPool({
   host: "localhost",
   user: "sbsst",
   password: "sbs123414",
-  database: "a9",
+  database: "exam1",
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  dateStrings: true,
 });
 
 const app = express();
-
 app.use(express.json());
-
-const corsOptions = {
-  origin: "https://cdpn.io",
-  optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
-};
-
-app.use(cors(corsOptions));
-
 const port = 3000;
 
-app.get("/todos/:id", async (req, res) => {
-  //const id = req.params.id;
+app.get("/exam1/random", async (req, res) => {
   const { id } = req.params;
-
-  const [rows] = await pool.query(
+  const [[wiseSayingRow]] = await pool.query(
     `
      SELECT *
-    FROM todo
-    WHERE id = ?
-    `,
-    [id]
-  );
+     FROM exam1
+     WHERE BY RAND()
+     LIMIT 1
+     `, 
+     [id,]
+     );
 
-  if (rows.length == 0) {
+  const (wiseSayingRow == undefined) {
     res.status(404).json({
-      msg: "not found",
+      resultCode: "F-1",
+      msg: "404 not found",
     });
     return;
   }
 
-  res.json(rows[0]);
+  res.json({
+    resultCode: "S-1",
+  msg: "성공",
+  data: wiseSayingRow,
+  });
 });
 
-app.get("/todos", async (req, res) => {
-  const [rows] = await pool.query("SELECT * FROM todo ORDER BY RAND() LIMIT 1");
+app.patch("/wise-sayings/:id", async (req, res) => {
+  const { id } = req.params;
 
-  res.json(rows);
+  const { author, content } = req.body;
+
+  const [rows] = await pool.query("SELECT * FROM wise_saying WHERE id = ?", [
+    id,
+  ]);
+
+  if (rows.length == 0) {
+    res.status(404).send("not found");
+    return;
+  }
+
+  if (!author) {
+    res.status(400).json({
+      msg: "author required",
+    });
+    return;
+  }
+
+  if (!content) {
+    res.status(400).json({
+      msg: "content required",
+    });
+    return;
+  }
+
+  const [rs] = await pool.query(
+    `
+    UPDATE wise_saying
+    SET content = ?,
+    author = ?
+    WHERE id = ?
+    `,
+    [content, author, id]
+  );
+
+  res.status(200).json({
+    id,
+    author,
+    content,
+  });
 });
 
-app.listen(port);
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});
