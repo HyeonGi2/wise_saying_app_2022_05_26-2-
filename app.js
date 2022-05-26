@@ -18,7 +18,7 @@ const app = express();
 app.use(express.json());
 
 const corsOptions = {
-  origin: "http://cdpn.io",
+  origin: "https://cdpn.io",
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 
@@ -32,9 +32,9 @@ app.get("/todos/:id", async (req, res) => {
 
   const [rows] = await pool.query(
     `
-    SELECT *
+     SELECT *
     FROM todo
-    ORDER BY RAND() limit 1;
+    WHERE id = ?
     `,
     [id]
   );
@@ -50,7 +50,7 @@ app.get("/todos/:id", async (req, res) => {
 });
 
 app.get("/todos", async (req, res) => {
-  const [rows] = await pool.query("SELECT * FROM todo ORDER BY id DESC");
+  const [rows] = await pool.query("SELECT * FROM todo ORDER BY RAND() LIMIT 1");
 
   res.json(rows);
 });
